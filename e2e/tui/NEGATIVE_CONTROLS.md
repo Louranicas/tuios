@@ -8886,3 +8886,15 @@ After review: under `hidden`, a frame that is a surface's only edge falls back t
 | Bug | Fix removed | How | Tests that fail | Verdict |
 |---|---|---|---|---|
 | A 16-colour panel loses its only edge under hidden | `panelFrame(pal)` at the `Panel.Render` frame site | Calls `dialogFrame()` again | `/hidden-16` (`got tl=" " … want tl="╭" tr="╮" bl="╰" br="╯" top="─" side="│"`) | **caught** |
+## A pane's command without -s uses the pane's session
+
+`TestAPaneCallWithoutSessionUsesThePaneSession` runs a probe pane in session
+`home` while session `other` is the most recent one. Both hold a window `x`.
+The probe unsets `TUIOS_SESSION` and calls `capture-pane`, `list-windows` and
+`send-text` with no `-s`. The positive half is the person's capture from
+outside every pane, which must read `other`'s `x`. Run on 2026-10-24 against a
+build of origin/main (c5e6439de).
+
+| Bug | Fix removed | How | Tests that fail | Verdict |
+|---|---|---|---|---|
+| A pane's call without `-s` acted on the most recently active session, not its own | The `callerSession` step in `findTargetSession` | Build of origin/main | `TestAPaneCallWithoutSessionUsesThePaneSession` (the capture reads `OTHER_MARK`, the listing is `other`'s, and the text never reaches `home`'s `x`) | **caught** |
