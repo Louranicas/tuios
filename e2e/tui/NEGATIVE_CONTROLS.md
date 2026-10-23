@@ -8883,3 +8883,13 @@ Run on 2026-10-23 on Linux amd64 (Go 1.27.1).
 | A hook whose output is lost uses up the notice | the hook asks without `lease` | `after a hook lost its output, the next PostToolUse added "", want the notice for 3 messages` | **caught** |
 | Asks take no turn | `askAgent` takes a no-op turn instead of `askTurns.take` | `ask ASK-THREE did not get its own answer: "GOT[ASK-THREEASK-FOUR]\nDONE[ASK-THREEASK-FOUR]"`: the two questions were typed into one line | **caught** |
 | The same, with the "sent together" half taken out of the test | as above | `ask ASK-TWO failed: exit status 1` (`not_ready` after its 1 second ready timeout) | **caught** |
+
+`TestACancelledAskLeavesTheLine` asks the same stand-in agent a question,
+then starts a second ask and kills its process while it waits its turn, then
+starts a third. The third must wait behind one ask, not two, and the pane must
+never show the cancelled question. The artifact is `ask-cancel.log`: the pane
+at the end. Run on 2026-10-24 on Linux amd64 (Go 1.27.1).
+
+| Control | How | Test that fails | Verdict |
+| --- | --- | --- | --- |
+| The ask never learns its caller went away | `askCancel` returns a channel that never closes | `the third ask waited behind 2 asks, want 1` and `the question of a caller that went away was typed` | **caught** |
