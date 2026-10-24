@@ -8869,3 +8869,18 @@ Run on 2026-10-23 on Linux amd64 (Go 1.27.1).
 | A message is announced again on every event | skip the announced-mark check in `takeNotice` | `the first message was announced 4 times, want once` | **caught** |
 | The compact `SessionStart` skips the guard | skip the harness guard in `verbAgentMailNotice` | `a compact SessionStart of another conversation got the pane's notice` | **caught** |
 | A hook whose output is lost uses up the notice | the hook asks without `lease` | `after a hook lost its output, the next PostToolUse added "", want the notice for 3 messages` | **caught** |
+
+## Edit the scrollback in the editor
+
+`TestCopyModeEditScrollback` prints 3000 numbered rows in a pane, searches back to `row-2990` in copy mode and presses `ctrl+g`. `EDITOR` is a script named `vim` that records its arguments, a copy of the file, and the modes of the file and its folder. The test requires a file with no escape codes that holds `row-1`, `row-1000` and `row-3000`, the arguments `+LINE FILE` with LINE the line of `row-2990` in that file, mode 600 on the file and 700 on its folder, and the file and folder gone after the editor exits while the client still runs. In the `daemon` case the rows are printed in a detached session before the client attaches, so the client holds only the newest 1000 history rows and only the daemon has `row-1`. With `TUIOS_E2E_FRAMES` set, it saves the arguments, the file and two frames.
+
+Run on 2026-10-24 on Linux with Go 1.27.1 against upstream main at efdc2a9c. Each control is a text replacement in `internal/app/os_selection.go`, built to a separate binary and put back before the next. The fixed build passes both cases.
+
+| Control: what was cut | Tests that fail | Verdict |
+| --- | --- | --- |
+| The fix removed (upstream main) | `standalone` and `daemon` ("ctrl+g in copy mode did not run the editor") | **caught** |
+| The daemon capture skipped: a daemon session writes the client's own copy | `daemon` ("the file has no line \"row-1\": the editor did not get the whole scrollback (1022 lines)") | **caught** |
+| `applyScrollbackEditorDone` does not remove the folder | `standalone` and `daemon` ("the scrollback file ... or its folder is still there after the editor exited") | **caught** |
+| No line passed to the editor | `standalone` and `daemon` ("the editor got [FILE], want it to end with [+2991 FILE]") | **caught** |
+
+Not covered end to end: the refusal in a browser client and in an SSH client from another machine, the removal when the client ends while the editor runs, the File editor setting, and the helix `FILE:LINE` form.
